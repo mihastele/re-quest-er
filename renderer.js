@@ -1,5 +1,5 @@
-const { ipcRenderer } = require('electron');
-const { exec } = require('child_process');
+import { ipcRenderer } from 'electron';
+import { exec } from 'child_process';
 
 document.getElementById('send').addEventListener('click', () => {
     const method = document.getElementById('method').value;

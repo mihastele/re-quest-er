@@ -17,8 +17,13 @@ function createWindow() {
     height: 800,
     webPreferences: {
       nodeIntegration: false,
+      // Run the preload script unsandboxed (full Node access in preload)
+      sandbox: false,
+      // Isolate the renderer's global context from the preload context
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: isDev 
+        ? path.join(__dirname, 'preload.mjs')
+        : path.join(__dirname, 'dist/preload.js')
     }
   });
 
