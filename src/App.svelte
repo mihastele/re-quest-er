@@ -1,61 +1,182 @@
 <script>
-  import RequestPanel from './lib/RequestPanel.svelte';
-  import ResponsePanel from './lib/ResponsePanel.svelte';
-  
-  let response = 'Response will appear here...';
-  let isLoading = false;
-  
-  async function handleRequest(method, url) {
-    if (!url) {
-      updateResponse('Error: Please enter a URL');
-      return;
-    }
+  import { onMount } from 'svelte';
+  import { request } from './utils/request.js';
 
-    isLoading = true;
-    updateResponse('Sending request...');
-    
+  let url = '';
+  let method = 'GET';
+  let body = '';
+  let response = null;
+  let responseView = 'web';
+  let statusCode = null;
+  let queryParams = [];
+  let pathParams = [];
+  let formData = [];
+
+  onMount(() => {
+    // Initialize queryParams, pathParams, and formData with empty values or load from storage if needed
+  });
+
+  async function sendRequest() {
     try {
-      const result = await window.electronAPI.sendRequest(method, url);
-      updateResponse(JSON.stringify(result, null, 2));
+      const result = await request(url, method, body, queryParams, pathParams, formData);
+      response = result.response;
+      statusCode = result.status;
     } catch (error) {
-      updateResponse(`Error: ${error.message}`);
-    } finally {
-      isLoading = false;
+      response = { error: true, message: error.message };
+      statusCode = null;
     }
   }
-  
-  function updateResponse(text) {
-    response = text;
+
+  function addQueryParam() {
+    queryParams = [...queryParams, { key: '', value: '' }];
+  }
+
+  function removeQueryParam(index) {
+    queryParams = queryParams.filter((_, i) => i !== index);
+  }
+
+  function addPathParam() {
+    pathParams = [...pathParams, { key: '', value: '' }];
+  }
+
+  function removePathParam(index) {
+    pathParams = pathParams.filter((_, i) => i !== index);
+  }
+
+  function addFormData() {
+    formData = [...formData, { key: '', value: '' }];
+  }
+
+  function removeFormData(index) {
+    formData = formData.filter((_, i) => i !== index);
+  }
+
+  function getStatusColor(code) {
+    if (code >= 200 && code < 300) return 'green';
+    if (code >= 400) return 'red';
+    return 'black';
   }
 </script>
 
-<main>
-  <div class="container">
-    <h1>Re-Quest-Er</h1>
-    <RequestPanel on:send-request="{e => handleRequest(e.detail.method, e.detail.url)}" {isLoading} />
-    <ResponsePanel {response} />
+<div class="container">
+  <div class="request-section">
+    <select bind:value={method}>
+      <option value="GET">GET</option>
+      <option value="POST">POST</option>
+      <option value="PUT">PUT</option>
+      <option value="DELETE">DELETE</option>
+    </select>
+    <input type="text" bind:value={url} placeholder="Enter URL" />
+    <button on:click={sendRequest}>Send</button>
   </div>
-</main>
+
+  <div class="params-section">
+    <h3>Query Parameters</h3>
+    {#each queryParams as param, index}
+      <div class="param-row">
+        <input type="text" bind:value={param.key} placeholder="Key" />
+        <input type="text" bind:value={param.value} placeholder="Value" />
+        <button on:click={() => removeQueryParam(index)}>Remove</button>
+      </div>
+    {/each}
+    <button on:click={addQueryParam}>Add Query Parameter</button>
+
+    <h3>Path Parameters</h3>
+    {#each pathParams as param, index}
+      <div class="param-row">
+        <input type="text" bind:value={param.key} placeholder="Key" />
+        <input type="text" bind:value={param.value} placeholder="Value" />
+        <button on:click={() => removePathParam(index)}>Remove</button>
+      </div>
+    {/each}
+    <button on:click={addPathParam}>Add Path Parameter</button>
+  </div>
+
+  <div class="body-section">
+    <h3>Body</h3>
+    <textarea bind:value={body} placeholder="Enter request body"></textarea>
+    <h3>Form Data (URL Encoded)</h3>
+    {#each formData as data, index}
+      <div class="param-row">
+        <input type="text" bind:value={data.key} placeholder="Key" />
+        <input type="text" bind:value={data.value} placeholder="Value" />
+        <button on:click={() => removeFormData(index)}>Remove</button>
+      </div>
+    {/each}
+    <button on:click={addFormData}>Add Form Data</button>
+  </div>
+
+  <div class="response-section">
+    <h3>Response {#if statusCode}<span style="color: {getStatusColor(statusCode)}">{statusCode}</span>{/if}</h3>
+    <div class="view-selector">
+      <button on:click={() => responseView = 'web'} class:active={responseView === 'web'}>Web View</button>
+      <button on:click={() => responseView = 'html'} class:active={responseView === 'html'}>HTML</button>
+      <button on:click={() => responseView = 'pretty'} class:active={responseView === 'pretty'}>Pretty HTML</button>
+    </div>
+    {#if response}
+      {#if response.error}
+        <p>Error: {response.message}</p>
+      {:else}
+        {#if responseView === 'web'}
+          <iframe srcdoc={response.html} title="Web View" />
+        {:else if responseView === 'html'}
+          <pre>{response.html}</pre>
+        {:else}
+          <pre>{response.prettyHtml}</pre>
+        {/if}
+      {/if}
+    {/if}
+  </div>
+</div>
 
 <style>
-  :global(body) {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f5f5f5;
-  }
-  
   .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    background: white;
     padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
   }
-  
-  h1 {
-    color: #333;
-    margin-top: 0;
+  .request-section {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .request-section input {
+    flex-grow: 1;
+    padding: 5px;
+  }
+  .params-section, .body-section, .response-section {
+    margin-bottom: 20px;
+  }
+  .param-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .param-row input {
+    flex-grow: 1;
+    padding: 5px;
+  }
+  textarea {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 10px;
+  }
+  .view-selector {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .view-selector button.active {
+    background-color: #007bff;
+    color: white;
+  }
+  iframe {
+    width: 100%;
+    height: 300px;
+    border: 1px solid #ccc;
+  }
+  pre {
+    background-color: #f8f8f8;
+    padding: 10px;
+    overflow-x: auto;
   }
 </style>

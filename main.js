@@ -12,13 +12,20 @@ const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 let mainWindow;
 
 function createWindow() {
+  // Convert the preload path to file URL for better compatibility
+  const preloadPath = path.join(__dirname, 'preload.js').replace(/\\/g, '/');
+  const preloadUrl = process.platform === 'win32' 
+    ? `file:///${preloadPath}` 
+    : `file://${preloadPath}`;
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: preloadPath,
+      sandbox: true
     }
   });
 

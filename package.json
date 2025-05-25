@@ -17,12 +17,11 @@
   "license": "MIT",
   "devDependencies": {
     "@sveltejs/kit": "^2.21.1",
-    "@sveltejs/vite-plugin-svelte": "^5.0.3",
-    "svelte": "^5.28.1",
-    "vite": "^6.3.5",
+    "@sveltejs/vite-plugin-svelte": "^3.1.2",
     "concurrently": "^8.2.2",
     "electron": "^28.1.0",
     "electron-builder": "^24.9.1",
+    "vite": "^5.4.8",
     "wait-on": "^7.2.0"
   },
   "dependencies": {
