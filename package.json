@@ -1,18 +1,15 @@
 {
   "name": "re-quest-er",
   "version": "1.0.0",
-  "description": "A cross-platform desktop app for sending HTTP requests",
+  "description": "A cross-platform desktop app for making HTTP requests",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "MIT",
-  "dependencies": {
-    "electron": "^25.0.0"
-  },
   "devDependencies": {
-    "electron-builder": "^24.4.0"
+    "electron": "^36.3.1"
   }
 }

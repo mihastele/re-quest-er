@@ -1,23 +1,51 @@
+const { ipcRenderer } = require('electron');
 const { exec } = require('child_process');
 
-document.getElementById('request-form').addEventListener('submit', (event) => {
-    event.preventDefault();
-    const url = document.getElementById('url').value;
+document.getElementById('send').addEventListener('click', () => {
     const method = document.getElementById('method').value;
-    const body = method === 'POST' || method === 'PUT' ? document.getElementById('request-body').value : '';
-    let curlCommand = `curl -X ${method} "${url}"`;
-    if (body) {
-        curlCommand += ` -H "Content-Type: application/json" -d '${body}'`;
+    const url = document.getElementById('url').value;
+    
+    if (!url) {
+        updateResponse('Error: Please enter a URL');
+        return;
     }
-    exec(curlCommand, (error, stdout, stderr) => {
+
+    updateResponse('Sending request...');
+    
+    // Build the curl command
+    let curlCommand = `curl -X ${method} "${url}"`;
+    
+    // Add headers for JSON response
+    curlCommand += ' -H "Accept: application/json"';
+    
+    // Execute the curl command
+    exec(curlCommand, { maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
         if (error) {
-            document.getElementById('response-output').textContent = `Error: ${error.message}`;
+            updateResponse(`Error: ${error.message}`);
             return;
         }
         if (stderr) {
-            document.getElementById('response-output').textContent = `Stderr: ${stderr}`;
+            updateResponse(`Error: ${stderr}`);
             return;
         }
-        document.getElementById('response-output').textContent = stdout;
+        try {
+            // Try to pretty-print JSON if the response is JSON
+            const json = JSON.parse(stdout);
+            updateResponse(JSON.stringify(json, null, 2));
+        } catch (e) {
+            // If not JSON, display as plain text
+            updateResponse(stdout || 'No response body');
+        }
     });
+});
+
+function updateResponse(text) {
+    document.getElementById('response').textContent = text;
+}
+
+// Handle Enter key in URL input
+document.getElementById('url').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        document.getElementById('send').click();
+    }
 });
